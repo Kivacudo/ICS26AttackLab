@@ -1,36 +1,7 @@
 #!/usr/bin/env python3
-"""Lab 3 / Task 4 -- attack/dark-log: bypass the stack canary.
+"""Task 4: build the payload for attack/dark-log.
 
-dark-log is non-PIE and NX, and ``input()`` is compiled with
-``-fstack-protector``.  Its frame is a struct:
-
-    rbp-0x120   char expression[128]   (gets() destination)
-    rbp-0x0a0   char logMsg[128]
-    rbp-0x020   int  len               (f.len)
-    rbp-0x01c   char pad[8]
-    rbp-0x008   canary        <-- checked before leave/ret
-    rbp         saved RBP
-    rbp+8       return address
-
-The bug is that ``f.len`` is attacker-controlled.  A plain overflow cannot
-reach the return address without destroying the canary, but the code then does
-``memcpy(f.logMsg + f.len, f.expression, 128)`` -- a *second* write whose
-destination depends on our data.  So:
-
-  * gets() writes only up to offset 0x103, i.e. it stops right after the 4-byte
-    ``len`` field and never touches the canary at offset 0x118;
-  * we set len = 0xa0, so memcpy() writes 128 bytes to
-    rbp-0xa0+0xa0 = rbp, i.e. to the saved RBP and the return address, while
-    the canary (rbp-8) is left untouched -> the check passes;
-  * the first 128 bytes of our input are the ROP chain, and every 8-byte
-    address contains no 0x0a byte, so gets() is happy.
-
-Gadgets: 0x4018a4 ret, 0x4018a3 pop rdi; ret (misaligned 41 5f c3),
-0x401677 grade_eval, 0x401590 _start.  dark-log does not import exit(3), so
-after grade_eval returns we jump back to ``_start``.  __libc_start_main runs
-main() once more; stdin is already at EOF, so input() returns immediately,
-main prints "Log saved." and returns 0, and the process exits cleanly.  The
-flag line has already been flushed to stdout by grade_eval anyway.
+TODO: replace the empty payload with the bytes required by the lab.
 """
 import struct
 import sys
